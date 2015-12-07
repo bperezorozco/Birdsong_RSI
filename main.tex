@@ -76,8 +76,16 @@ The explosion of data in recent years has allowed scientists to gain insight in 
 \end{figure}
 \par Importantly, several academics in Zoology have pointed out the similarities between human speech and birdsong, e.g. we can think of both humans vowels and birdsong as ``complex, patterned vocalisations" \cite{Berwick2013,Naguib2014}. This remark enables us to analyse birdsong by means of some of the techniques from the field of Automatic Speech Recognition (ASR), which will be introduced in section \ref{section_model}. 
 \par The rest of this article is organised as follows: in section \ref{section_model}, we introduce the mathematical framework used to build phylo-acoustic trees; then, in section \ref{section_results}, we present our experiments and results; and in section \ref{section_conclusion} we present our conclusions and future work.
+
 \section{Model architecture (1500-2000 words)}
 \label{section_model}
+In this section, we describe the procedure to build phylo-acoustic trees given a dataset $\mathcal{D}$ with audio recordings of birdsong of different bird species from a set $X$. We are interested in finding a relation $R$ over pairs of elements in $X$, along with a scalar $s_{i, j} \in \mathbb{R}$ called the \emph{similarity} between species $x_i, x_j \in X$, i.e. $R \subseteq X \times X \times \mathbb{R}$. This relation can then be expressed as a symmetric matrix $A = (s_{i,j})$ and be used as input to build a phylo-acoustic tree by means of Agglomerative Hierarchical Clustering (AHC). 
+\par Due to the continuous nature of birdsong, recordings in $\mathcal{D}$ are rarely of the same length, and hence we would like to build a similarity matrix that is \emph{length-invariant}. We achieve this by characterising each bird species $x_k \in X$ as a statistical model, and then by defining a similarity metric between pairs of statistical models. In the rest of this section, we aim to describe such similarity metrics, and then explain how they can be used in conjunction with AHC to build phylo-acoustic trees.
+
+\subsection{Building similarity matrices}
+
+
+\subsection{Agglomerative Hierarchical clustering}
 
 \section{Experiments and results (1500 words)}
 \label{section_results}
