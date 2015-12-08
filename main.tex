@@ -83,8 +83,40 @@ In this section, we describe the procedure to build phylo-acoustic trees given a
 \par Due to the continuous nature of birdsong, recordings in $\mathcal{D}$ are rarely of the same length, and hence we would like to build a similarity matrix that is \emph{length-invariant}. We achieve this by characterising each bird species $x_k \in X$ as a statistical model, and then by defining a similarity metric between pairs of statistical models. In the rest of this section, we aim to describe such similarity metrics, and then explain how they can be used in conjunction with AHC to build phylo-acoustic trees.
 
 \subsection{Building similarity matrices}
+In our approach, we associate each bird species to a probability distribution of the frequency features of their birdsong, and then compute the pairwise similarity matrix of these distributions. In order to extract frequency features from birdsong, we use the Linear Predictive Coding (LPC) framework to compute the \emph{formant trajectories} of each birdsong recording. The LPC framework is based on the source-filter model of speech, which models acoustic signals shaped by the vocal tract, such as vowel sounds shaped by the larynx in the case of humans, and as birdsong, which is shaped by the syrinx.
 
+\subsubsection{Formant trajectory extraction}
+\par Consider a short excerpt of birdsong (20-40ms) $\V{s}$. Then, it is produced by the LTI system with system function:
+\begin{align*}
+H(z) = \frac{1}{A(z)} = \frac{1}{1-\sum_{i=1}^pa_iz^{-i}}
+\end{align*}
+where 
+\begin{align*}
+\sum_{i=1}^pa_iz^{-i} = \V{\hat{s}}
+\end{align*}
+is the $p$-th order autoregressive approximation $\V{\hat{s}} = \V{s} - \V{\hat{e}}$. Remark that this LTI system is fully characterised by the coefficients $a_i$. We now define the formant frequencies of the excerpt $\V{s}$ as the poles of the system function $H(z)$; intuitively, these can be thought of as the resonances of the vocal tract of each bird when producing birdsong. Now, given a pair of complex roots $re^{\pm\theta}$, the formant frequency associated to it is given by:
+\begin{align*}
+F = \frac{f_s}{2\pi}\theta \text{Hz}
+\end{align*}
+where $f_s$ is the sampling frequency of the signal. Furthermore, given a pair of complex roots $re^{\pm\theta}$, the 3-dB bandwidth associated to it is:
+\begin{align*}
+B = -\frac{f_s}{2\pi}\log{r} \text{Hz}
+\end{align*}
+\par Another way of interpreting formants is as the peaks of the spectral envelope of the signal. This gives an intuition to the 3-dB bandwidth, which is simply the width of envelope exactly 3 dB below the peak. Smaller bandwidths hint at clearer, more characteristic formants. By framing the original birdsong recording and repeating the procedure above, we obtain a trajectory of formants extracted uniformly over small intervals of time. 
 
+\subsubsection{Computing probability distributions}
+Once each birdsong recording has been transformed into a formant trajectory, we can estimate a probability distribution function (pdf) out of it, hence characterising each bird species as a function. We now describe two different approaches to obtain pdfs: Kernel Density Estimation and Variational Bayes Hidden Markov Model training.
+\par Kernel Density Estimation (KDE) consists in approximating the probability density function of a set of points as a linear combination of basis functions (non-negative kernels). We place an instance of this basis function around each point in the set, and then weigh them accordingly. For the univariate case, the pdf $pdf_K(x)$ obtained from KDE using kernel $K$ over a set of points $X$ is given by:
+\begin{align*}
+p_K(x) = \frac{1}{Nh}\sum_{i=1}^NK\left(\left|\frac{x - x_i}{h}\right|\right)
+\end{align*}
+where $h$ is called the bandwidth. Crucially, using a smooth kernel provides a smooth pdf as a result, where the degree of smoothness is controlled by the parameter $h$, and its value will make the resulting probability function be oversmoothed, undersmoothed or optimally smoothed.
+\par One of the most common smooth kernels in the literature is the univariate Gaussian kernel \cite{hastie2008}, given by:
+\begin{align*}
+K_G\left(\frac{x}{h}\right) = \frac{1}{\sqrt{2\pi}}\exp{\left(-\frac{x^2}{2h^2}\right)}
+\end{align*}
+whose optimal bandwidth in the least-squares error sense is given by $h = \hat{\sigma}n^{-1/5}$, where $\hat{\sigma}$ is the standard deviation of the sample $X$.
+\par Note that, despite its simplicity, KDE is a poorly scalable strategy: on one hand, the bandwidth $h$ becomes harder to choose as the dimensionality of data increases \cite{Hansen2009}; on the other hand, the number of points to be stored increases exponentially with each added dimension.
 \subsection{Agglomerative Hierarchical clustering}
 
 \section{Experiments and results (1500 words)}
@@ -94,7 +126,7 @@ In this section, we describe the procedure to build phylo-acoustic trees given a
 \label{section_conclusion}
 \blindtext
 
-\section*{Acknowledgments}
+\section*{Acknowledgements}
 
 
 The authors would like to thank the National Council for Science and Technology in Mexico (CONACYT) for funding this research project.
