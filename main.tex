@@ -11,6 +11,7 @@
 \usepackage{epstopdf}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{hyperref}
+\usepackage{color}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
@@ -71,7 +72,7 @@ The explosion of data in recent years has allowed scientists to gain insight in 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{images/birdsong_structure}
-\caption{Spectrogram from a birdsong recording of the species \emph{Periparus ater}. The thick blue and green bars represent syllables, and the black boxes represent a motif. Remark the pattern repeats regularly from left to right, and that motifs can be grouped hierarchically as syllables \cite{Snowdon2013}.}
+\caption{Spectrogram from a birdsong recording of the species \emph{Periparus ater}. The thick blue and green bars represent syllables, and the black boxes represent a motif. Remark the pattern repeats regularly from left to right, and that motifs can be grouped hierarchically as syllables \cite{Snowdon2013}. \color{red}{\textbf{Make a better figure.}}}
 \label{fig_birdsong_structure}
 \end{figure}
 \par Importantly, several academics in Zoology have pointed out the similarities between human speech and birdsong, e.g. we can think of both humans vowels and birdsong as ``complex, patterned vocalisations" \cite{Berwick2013,Naguib2014}. This remark enables us to analyse birdsong by means of some of the techniques from the field of Automatic Speech Recognition (ASR), which will be introduced in section \ref{section_model}. 
@@ -79,14 +80,12 @@ The explosion of data in recent years has allowed scientists to gain insight in 
 
 \section{Model architecture (1500-2000 words)}
 \label{section_model}
-In this section, we describe the procedure to build phylo-acoustic trees given a dataset $\mathcal{D}$ with audio recordings of birdsong of different bird species from a set $X$. We are interested in finding a relation $R$ over pairs of elements in $X$, along with a scalar $s_{i, j} \in \mathbb{R}$ called the \emph{similarity} between species $x_i, x_j \in X$, i.e. $R \subseteq X \times X \times \mathbb{R}$. This relation can then be expressed as a symmetric matrix $A = (s_{i,j})$ and be used as input to build a phylo-acoustic tree by means of Agglomerative Hierarchical Clustering (AHC). 
-\par Due to the continuous nature of birdsong, recordings in $\mathcal{D}$ are rarely of the same length, and hence we would like to build a similarity matrix that is \emph{length-invariant}. We achieve this by characterising each bird species $x_k \in X$ as a statistical model, and then by defining a similarity metric between pairs of statistical models. In the rest of this section, we aim to describe such similarity metrics, and then explain how they can be used in conjunction with AHC to build phylo-acoustic trees.
+In this section, we describe the procedure to build phylo-acoustic trees given a dataset $\mathcal{D}$ with audio recordings of birdsong of different bird species from a set $X$. We are interested in finding a relation $R$ over pairs of elements in $X$, along with a scalar $s_{i, j} \in \mathbb{R}$ called the \emph{similarity} between species $s_i, s_j \in S$, i.e. $R \subseteq S \times S \times \mathbb{R}$. This relation can then be expressed as a symmetric matrix $A = (d_{i,j})$ and be used as input to build a phylo-acoustic tree by means of Agglomerative Hierarchical Clustering (AHC). 
+\par Due to the continuous nature of birdsong, recordings in $\mathcal{D}$ are rarely of the same length, and hence we would like to build a similarity matrix that is \emph{length-invariant}. We achieve this by characterising each bird species $s_k \in S$ as a statistical model, and then by defining a similarity metric between pairs of statistical models. In the rest of this section, we aim to describe such similarity metrics, and then explain how they can be used in conjunction with AHC to build phylo-acoustic trees.
+\par In our work, we associate each bird species to a probability distribution of the frequency features of their birdsong, and then compute the pairwise similarity matrix of these distributions. In order to extract frequency features from birdsong, we use the Linear Predictive Coding (LPC) framework to compute the \emph{formant trajectories} of each birdsong recording. The LPC framework is based on the source-filter model of speech, which models acoustic signals shaped by the vocal tract, such as vowel sounds shaped by the larynx in the case of humans, and as birdsong, which is shaped by the syrinx.
 
-\subsection{Building similarity matrices}
-In our approach, we associate each bird species to a probability distribution of the frequency features of their birdsong, and then compute the pairwise similarity matrix of these distributions. In order to extract frequency features from birdsong, we use the Linear Predictive Coding (LPC) framework to compute the \emph{formant trajectories} of each birdsong recording. The LPC framework is based on the source-filter model of speech, which models acoustic signals shaped by the vocal tract, such as vowel sounds shaped by the larynx in the case of humans, and as birdsong, which is shaped by the syrinx.
-
-\subsubsection{Formant trajectory extraction}
-\par Consider a short excerpt of birdsong (20-40ms) $\V{s}$. Then, it is produced by the LTI system with system function:
+\subsection{Formant trajectory extraction}
+\par \textcolor{red}{\textbf{At least mention some of the techniques you didn't use.}} Consider a short excerpt of birdsong (20-40ms) $\V{s}$. Then, it is produced by the LTI system with system function:
 \begin{align*}
 H(z) = \frac{1}{A(z)} = \frac{1}{1-\sum_{i=1}^pa_iz^{-i}}
 \end{align*}
@@ -104,9 +103,10 @@ B = -\frac{f_s}{2\pi}\log{r} \text{Hz}
 \end{align*}
 \par Another way of interpreting formants is as the peaks of the spectral envelope of the signal. This gives an intuition to the 3-dB bandwidth, which is simply the width of envelope exactly 3 dB below the peak. Smaller bandwidths hint at clearer, more characteristic formants. By framing the original birdsong recording and repeating the procedure above, we obtain a trajectory of formants extracted uniformly over small intervals of time. 
 
-\subsubsection{Computing probability distributions}
-Once each birdsong recording has been transformed into a formant trajectory, we can estimate a probability distribution function (pdf) out of it, hence characterising each bird species as a function. We now describe two different approaches to obtain pdfs: Kernel Density Estimation and Variational Bayes Hidden Markov Model training.
-\par Kernel Density Estimation (KDE) consists in approximating the probability density function of a set of points as a linear combination of basis functions (non-negative kernels). We place an instance of this basis function around each point in the set, and then weigh them accordingly. For the univariate case, the pdf $pdf_K(x)$ obtained from KDE using kernel $K$ over a set of points $X$ is given by:
+\subsection{Computing probability distributions}
+Once each birdsong recording has been transformed into a formant trajectory, we can estimate a probability distribution function (pdf) out of it, hence characterising each bird species as a function. We now describe some approaches to obtain pdfs.
+\subsubsection{Kernel Density Estimation}
+\par KDE consists in approximating the probability density function of a set of points as a linear combination of basis functions (non-negative kernels). We place an instance of this basis function around each point in the set, and then weigh them accordingly. For the univariate case, the pdf $p_K(x)$ obtained from KDE using kernel $K$ over a set of points $X$ is given by:
 \begin{align*}
 p_K(x) = \frac{1}{Nh}\sum_{i=1}^NK\left(\left|\frac{x - x_i}{h}\right|\right)
 \end{align*}
@@ -116,7 +116,43 @@ where $h$ is called the bandwidth. Crucially, using a smooth kernel provides a s
 K_G\left(\frac{x}{h}\right) = \frac{1}{\sqrt{2\pi}}\exp{\left(-\frac{x^2}{2h^2}\right)}
 \end{align*}
 whose optimal bandwidth in the least-squares error sense is given by $h = \hat{\sigma}n^{-1/5}$, where $\hat{\sigma}$ is the standard deviation of the sample $X$.
-\par Note that, despite its simplicity, KDE is a poorly scalable strategy: on one hand, the bandwidth $h$ becomes harder to choose as the dimensionality of data increases \cite{Hansen2009}; on the other hand, the number of points to be stored increases exponentially with each added dimension.
+\par Note that, despite its simplicity, KDE is a poorly scalable strategy: on one hand, the bandwidth $h$ becomes harder to choose as the dimensionality of data increases \cite{Hansen2009}; additionally, the number of values to store for the output pdf increases exponentially with each added dimension. Moreover, it also suggests that the data can be explained by a model with fewer basis functions than KDE.
+
+\subsubsection{Gaussian Mixture Models}
+\label{subsection_gmm}
+The scalability challenge imposed by KDE motivates the look for a more compact representation of data. Note that formant trajectories for different birdsong syllables from the same species have been shown to exist in different frequency ranges. This suggests the existence of subpopulations in our data $\mathcal{X}$. Thus we can fit a Gaussian Mixture Model (GMM) that explains this data. In particular, the pdf for a datum $x$ is given by:
+\begin{equation} \label{eq:mixmod}
+p(\V{x} \given \theta ) = \sum_{i=1}^K\pi_i \mathcal{N}(\V{\mu}_i, \Sigma_i) 
+\end{equation}
+i.e. a convex combination of Gaussians. However, even if GMMs are more scalable than KDE, neither KDE nor GMMs allow for the existence of time ordering of data. In other words, both models treat the formant trajectories as sets, rather than sequential structures. This motivates the need for an even more abstract structure that takes into consideration the sequential structure of formant trajectories.
+
+\subsubsection{Variational Bayes Hidden Markov Models}
+Although Gaussian Mixture Models overcome the scalability issues of KDE, both techniques still suffer from losing the sequential structure of formant trajectories. Hidden Markov Models overcome these challenges by combining an \emph{emission model} with parameters $\phi$, a \emph{transition model}, which is a Markov chain with transition matrix $B$, and an initial state categorical distribution $\pi$, which altogether describe a sequence $\V{x}$: the emission model explains the observations in the sequence, whereas the transition model and the initial state distribution explain its time ordering.
+\par In this scenario, we aim to infer the probability that the model generated such observations $\V{x}$ and that the underlying Markov Process generated the sequence of states $\V{s}$. This is given by the joint probability $p(\V{x}, \V{s})$:
+\begin{equation}\label{eq:hmm}
+p(\V{x}, \V{s}) = p(\V{s})p(\V{x} \given \V{s}) = p(s_1)\prod_{t=1}^{T-1}p(s_{t+1}\given s_t)\prod_{t=1}^Tp(\V{x}_t \given s_t)
+\end{equation} 
+\par An HMM is fully characterised (up to a permutation of states) by these three parameters $\theta = (\phi, B, \pi)$. Furthermore, the observations analysed by an HMM can be continuous or discrete \cite{Jurafsky2009}. Note that formants $\V{f}_i$ belong to a continuous space, hence we will focus on describing continuous HMMs henceforth.
+\par Let the emission model of an HMM be a GMM. Notice that the transition model explains the data's sequential structure without losing any of the GMM's advantages described in section \ref{subsection_gmm}. Thus we have overcome the main challenge described for GMMs. However, we still have two matters to address: on one hand, we have yet to describe a learning procedure for continuous HMMs; on the other hand, we also have to touch on model selection, i.e. finding a method to choose how many states an HMM should have. Importantly, note that for every HMM with $K$ states, there exist $K!$ equivalent HMMs that can be generated by permuting the identities of the HMM's states. This problem is called \emph{identifiability} \cite{Bishop2006}, and will play an important role when we define a metric between HMMs. 
+\par We first address HMM training. We aim to make inferences about the parameters $\theta$ given data $\mathcal{X}$. A \emph{frequentist} approach to this is Maximum Likelihood Estimation (MLE). However, MLE has several disadvantages \cite{Murphy2012}. Firstly, there is no measure of uncertainty regarding the point estimate $\hat{\theta}$, and thus we are not able to know how trustworthy the estimate is. Secondly, the mode of a distribution is often untypical of the distribution \cite{Murphy2012} because it does not take into account the volume distribution of the probability distribution. Finally, MLE estimates are prone to overfit data. To illustrate this scenario, consider a fair coin that is tossed two times, and it lands heads on both occasions. An MLE estimate for this Bernoulli distribution would set $\hat{\theta} = 1$, i.e. it would immediately conclude that the coin is loaded \cite{Murphy2012}.
+\par These disadvantages can be treated by performing Bayesian learning. In the Bayesian approach, we measure uncertainty by letting the parameters $\theta$ be probability distributions about which we have beliefs. These are represented by prior distributions. A full treatment of how this framework can be used specifically for continuous HMM training is given in \cite{Rezek2005}, where the posterior distributions for the transition and initial state are approximated as Dirichlet distributions. The authors also give an account of the emission models for different kinds of observations. In particular, for Gaussian models, they approximate the mean as a Normal Distribution and the precision matrices as Wishart densities. 
+\par There is still one more issue to address: model selection, i.e. determining how many states an HMM should have. Although techniques such as cross-validation have been extensively investigated \cite{Siddiqi2007,Rezek2005}, Variational Bayes approaches have been shown to have a natural shrinkage of the number of states, i.e. the state space dimension $K$ need not be estimated by iterative training and testing of models. Instead, the system finds an optimal number of states during training: states not visited by the model collapse and only those that correspond to the true number of clusters are used \cite{Rezek2005}. 
+
+\subsection{Similarity metrics}
+We are now concerned by distance metrics between probability distributions and between HMMs, and aim to give several examples of metrics in order to build relational structures.
+\par The Symmetric Kullback-Leibler divergence and the Hellinger distance\footnote{Please refer to appendix \ref{metrics_review} for further details on these and other frequently used similarity metrics.} are similarity metrics for continuous probability densities, which can be approximated for discrete probability distributions $P, Q$ as follows:
+\begin{align*}
+d_{\text{SKLD}}(P, Q) &= \frac{1}{2}\sum_iP_i\log{\frac{P_i}{Q_i}} + Q_i\log{\frac{Q_i}{P_i}}\\
+d_{\text{H}}(P, Q) &= \sqrt{1 - \sum_i \sqrt{P_iQ_i}}
+\end{align*}
+\par These expressions allow us to compute distances between non-parametric distributions, such as those obtained from Kernel Density Estimation. However, this approach is linear ($\mathcal{O}(N)$) on the number of points in the distribution; closed forms also exist for parametric distributions, which makes the computation $\mathcal{O}(1)$. 
+\par \textcolor{red}{Add a couple of sentences on the HMM similarity review.} The literature on HMM similarity focuses on computing similarity between emission models (potentially weighted by first-state distributions). While there is a potential loss of information as a result of not computing the similarity between transition models too, it is also true that some information still remains due to the HMM training algorithms. In particular, assume a continuous HMM with a GMM emission model. Notice that an HMM's GMM is fundamentally different from a stand-alone GMM.
+\par Since both are statistical models with latent variables, both can be trained using the Variational Bayes framework discussed in subsection. However, there is a key difference: HMMs account for a larger set of parameters that includes those of the transition model. This is taken into account in the framework when deriving the parameter learning rules, and hence the HMM's GMM is fundamentally different from the stand-alone version - the former does account for time ordering at training time.
+\par As a consequence, a metric between two HMMs $\lambda_p, \lambda_q$ with GMM emission models $\phi_p, \phi_q$ is given by:
+\begin{align*}
+D_{\text{GMM}}(\lambda_p, \lambda_q) = d( \phi_p, \phi_q )
+\end{align*}
+Where $d$ is a similarity measure between probability distributions, such as the SKLD or the Hellinger Distance.
 \subsection{Agglomerative Hierarchical clustering}
 
 \section{Experiments and results (1500 words)}
