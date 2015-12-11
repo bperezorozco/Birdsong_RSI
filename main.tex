@@ -89,9 +89,8 @@ In this section, we describe a procedure to build phylo-acoustic trees given a d
 \par In our work, we associate each bird species to a statistical model on the frequency components of their birdsong. In order to extract frequency features from birdsong, we use the Linear Predictive Coding (LPC) framework to compute the \emph{formant trajectories} of each birdsong recording. The LPC framework is based on the source-filter model of speech, which models acoustic signals shaped by the vocal tract, such as vowel sounds shaped by the larynx in the case of humans, and as birdsong, which is shaped by the syrinx.
 
 \subsection{Feature extraction}
-\par \textcolor{red}{\textbf{At least mention some of the techniques you didn't use.}} 
-The signal processing literature provides a broad range of techniques that can be used to extract features from acoustic signals. 
-Formant trajectory extraction is based on the Linear Prediction of Speech framework \cite{Snell1993}. Consider a short excerpt of birdsong (20-40ms) $\V{s}$. Then, it is described by the LTI system with system function:
+There is a very broad literature on feature extraction from acoustic signals. Most of it has been motivated by the need to have applications for human speech. Techniques include Mel-frequency Cepstral Coefficients \cite{Jurafsky2009, Chou2008a, Stowell2014, Gutierrez-Osuna2009}, spherical K-means \cite{Stowell2014}, the MUSIC algorithm \cite{Evans, Kootsookos1999}, independent component analysis (ICA) \cite{Kasprzak,Hsieh2009,Chien2006,Jang2001} and wavelets \cite{Gamulkiewicz2003, Chou2009}.
+\par Formant trajectory extraction is a feature extraction technique whose mathematical framework provides not only a theoretical underpinning from the signal analysis perspective, but also considers the way (in the biological sense) in which birdsong is produced. It is based on the Linear Prediction of Speech framework, which in turn is based on the source-filter model of speech \cite{Snell1993}. Consider a short excerpt of birdsong (20-40ms) $\V{s}$. Then, it is described by the LTI system with system function:
 \begin{align*}
 H(z) = \frac{1}{A(z)} = \frac{1}{1-\sum_{i=1}^pa_iz^{-i}}
 \end{align*}
@@ -141,8 +140,7 @@ p(\V{x} \given \theta ) = \sum_{i=1}^K\pi_i \mathcal{N}(\V{\mu}_i, \Sigma_i)
 \end{equation}
 with $\sum_i=1^K\pi_i, 0 \leq \pi_i\leq 1$. Nevertheless, even if GMMs are more scalable than KDE, neither method allows for the existence of time ordering of data. That is, both models treat the formant trajectories as sets, rather than sequential structures. This motivates the need for an even more abstract structure that takes into consideration the sequential structure of formant trajectories.
 
-\subsubsection{Variational Bayes Hidden Markov Models}
-\label{sub_hmms}
+\subsubsection{Variational Bayes Hidden Markov Models} \label{sub_hmms}
 Although Gaussian Mixture Models overcome the scalability issues of KDE, both techniques still suffer from losing the sequential structure of formant trajectories. Hidden Markov Models overcome these challenges by combining an \emph{emission model} with parameters $\phi$, a \emph{transition model}, which is a Markov chain with transition matrix $B$, and an initial state categorical distribution $\pi$, which altogether describe a sequence $\V{x}$: the emission model explains the observations in the sequence, whereas the transition model and the initial state distribution explain its time ordering.
 \par In this scenario, we aim to infer the probability that the model generated such observations $\V{x}$ and that the underlying Markov Process generated the sequence of states $\V{s}$. This is given by the joint probability $p(\V{x}, \V{s})$:
 \begin{equation}\label{eq:hmm}
@@ -162,9 +160,10 @@ d_{\text{SKLD}}(P, Q) &= \frac{1}{2}\sum_iP_i\log{\frac{P_i}{Q_i}} + Q_i\log{\fr
 d_{\text{H}}(P, Q) &= \sqrt{1 - \sum_i \sqrt{P_iQ_i}}
 \end{align*}
 \par These expressions allow us to compute distances between non-parametric distributions, such as those obtained from Kernel Density Estimation. However, this approach is linear ($\mathcal{O}(n)$) on the number of points in the distribution; closed forms do exist for parametric distributions, accounting for a more efficient computation, $\mathcal{O}(1)$. 
-\par \textcolor{red}{Add a couple of sentences on the HMM similarity review.} The literature on HMM similarity focuses on computing similarity between emission models (potentially weighted by first-state distributions). While there is a potential loss of information as a result of not computing the similarity between transition models too, it is also true that some information still remains due to the HMM training algorithms. 
+\par The literature on HMM similarity is not broad. The authors in \cite{Lyngs1999} define a similarity metric in terms of the co-emission probability (i.e. the probability of generating the same sequence of observations independently); \cite{Bahlmann2001} uses the Bayes Probability of Error instead, which can be understood as the area of overlap of two densities $p_1, p_2$ with priors $\pi_1, \pi_2$ under the restriction $\pi_1+\pi_2 = 1$; finally, a third distance measure is proposed in \cite{Juang1985} for discrete HMMs, and consists in computing the norm between their emission models, which are empirical pdfs.
+\par It can be seen that the literature on HMM similarity focuses on computing similarity between emission models (potentially weighted by first-state distributions). While there is a potential loss of information as a result of not computing the similarity between transition models too, it is also true that some information still remains due to the HMM training algorithms. 
 \par In particular, assume a continuous HMM with a GMM emission model. Notice that an HMM's GMM is fundamentally different from a stand-alone GMM. Since both are statistical models with latent variables, both can be trained using the Variational Bayes framework discussed above. However, there is a key difference: HMMs account for a larger set of parameters that includes those of the transition model. This is taken into account in the framework when deriving the parameter learning rules, and hence the HMM's GMM is fundamentally different from its stand-alone version - the former does not account for time ordering during the training phase.
-\par As a consequence, a metric between two HMMs $\lambda_p, \lambda_q$ with GMM emission models $\phi_p, \phi_q$ can be defined as:
+\par As a consequence, a metric between two HMMs $\lambda_p, \lambda_q$ with GMM emission models $\phi_p, \phi_q$ can also be defined as:
 \begin{align*}
 D_{\text{GMM}}(\lambda_p, \lambda_q) = d( \phi_p, \phi_q )
 \end{align*}
@@ -399,16 +398,15 @@ H_0 = \text{there is no relationship between the species in a phylo-acoustic tre
 \label{fig_lt_occ}
 \end{figure}   
 
-
-\section{Conclusion (500 words)}
+\section{Conclusion}
 \label{section_conclusion}
-
-
+In this work, we presented the implementation details for a MATLAB prototype that builds phylo-acoustic trees automatically and then showed 6 examples of them. These results were not aimed at finding a clear mapping between phylo-acoustic and phylo-genetic trees, but rather as an exploratory means that unveils interesting acoustic relationships among species, some of which are related to genetic links. However, we must also account for the fact that a wide variety of phenomena affect how birdsong evolves, e.g. adaptation of migrating bird flocks, environmental pressures and mating advantage all affect how birdsong changes over time. 
+\par Nevertheless, some relations are in fact related to phylogenetic links. For example, consider the \emph{Phylloscopus} genus. In all six phylo-acoustic trees shown in last section, species belonging to this genus tend to cluster together, suggesting the traits they share can be identified even by means of different techniques.
+\par Another example are the genera \emph{Phylloscopus}, \emph{Sylvia} and \emph{Acrocephalus}. Species belonging to these are often clustered together - sometimes even before being grouped with other species of their same genus. This comes to no surprise when we discover that all three genera are warblers in English, suggesting that the tree does show some connection to phylo-genetic relations. Further discussion regarding this kind of observations is outside the scope of this work.
+\par In conclusion, we have described a method to automatically build phylo-acoustic trees from birdsong in a length-invariant fashion. This enables users to visualise interactions between bird species, and give a meaningful interpretation to them, which could be justified by a real-world phylo-genetic, environmental or behavioural relation. Crucially, we characterised bird species as statistical models, which allowed for length-invariant comparison between them. The resulting phylo-acoustic trees were shown to have a real community structure (from the mathematical perspective) and, at the same time, to display interactions that do take place in the world (e.g. clustering species that belong to the same genus).
 
 \section*{Acknowledgements}
-
-
-The authors would like to thank the National Council for Science and Technology in Mexico (CONACYT) for funding this research project.
+The authors would like to thank the National Council for Science and Technology in Mexico (CONACYT) for funding this research project. 
 
 
 \addcontentsline{toc}{chapter}{Bibliography}
