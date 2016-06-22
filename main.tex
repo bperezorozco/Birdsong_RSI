@@ -70,19 +70,23 @@ Birdsong is a rich means of communication that encapsulates behavioural patterns
 
 \section{Introduction}
 \label{section_introduction}
-The explosion of data in recent years has allowed scientists to gain insight in a diversity of domains. Furthermore, the widespread use of computational methods has in turn provided means of rapidly extracting conclusions from data. In this work, we tackle the problem of inferring phylo-acoustic trees of bird species by analysing their birdsong similarity. Crucially, this mathematical representation relies only on the validity of a formal analysis framework, and hence it unveils relations that go beyond empirical conclusions. 
-\par Birdsong is a rich means of communication that encapsulates behavioural patterns (such as territory defence and mate attraction or competition \cite{Berwick2013, Naguib2014}) in a regular and hierarchical fashion \cite{Snowdon2013}, as shown in Figure \ref{fig_birdsong_structure}. Crucially, birdsong is learnt by repetition \cite{Berwick2013}, which implies that forced migration may push flocks to learn songs that do not necessarily come from their parents. Hence, building phylo-acoustic trees may further our understanding of how different species are related (even across different genera).
+The explosion of data in recent years has allowed scientists to gain insight in a diversity of domains. Furthermore, the widespread use of computational methods has in turn provided means of rapidly extracting conclusions from data. In this work, we tackle the problem of building hierarchical structures from time series. Importantly, characterising time series introduces the problem of dealing with sequences of different length, which in itself is also a problem of information redundancy, i.e. longer sequences may contain repeated patterns that do not translate into information gain.
+\par In this work, we propose a length-invariant method to produce such relational structures: we first train a Variational HMM over a feature time seres and then compare them using a novel similarity metric based on sequence generation likelihood. This enables us to use Agglomerative Hierarchical Clustering to build a relational structure. In particular, our experimental setting consists in building a \textit{phylo-acoustic tree} of bird species, i.e. a hierarchical structure that summarises acoustic relations across a wide range of bird species.
+\par Phylo-acoustic structures may have little in common with their genetic counterparts, which do not account for exogenous phenomena. Even though birdsong is learnt by repetition, forced migration may push flocks to learn songs that do not necessarily come from their parents \cite{Berwick2013}. Birdsong is also hierarchical and regular \cite{Snowdon2013}, i.e. it is composed of motifs of patterns as can be seen in Figure \ref{fig_birdsong_structure}, and hence the amount of information in individual songs is dominated by the number of different patterns that appear, and not by their number of occurrences. 
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{images/birdsong_structure}
 \caption{Spectrogram of a birdsong recording of the species \emph{Periparus ater}. Note the regular structure of birdsong: syllables (thick boxes) are composed of motifs (thin boxes).}
 \label{fig_birdsong_structure}
 \end{figure}
-\par Importantly, research in Zoology has pointed out the similarities between human speech and birdsong, e.g. we can think of both as ``complex, patterned vocalisations" \cite{Berwick2013,Naguib2014}. This remark enables us to analyse birdsong by means of some Automatic Speech Recognition (ASR) techniques, which will be introduced in section \ref{section_model}. 
-\par The rest of this article is organised as follows: first, in section \ref{section_review} we provide a literature review on automated birdsong analysis and its applications; then in section \ref{section_model}, we introduce the mathematical framework used to build phylo-acoustic trees; in section \ref{section_results}, we present our experiments and results; and in section \ref{section_conclusion} we present our conclusions and future work.
+
+\par The rest of this article is organised as follows: first, in section \ref{section_review} we provide a literature review on building relational structures from time series; then in section \ref{section_model}, we introduce the mathematical framework used to build such structures; in section \ref{section_results}, we present our experiments and results; and in section \ref{section_conclusion} we present our conclusions and future work.
 
 \section{Literature review}
 \label{section_review}
+
+
 Birdsong analysis has long been of interest in the research community because it encapsulates behavioural information that can be extracted by means of tools with a formal mathematical background. For example, birdsong analysis has been used extensively to perform bird species classification \cite{Chou2009,Wielgat2012,McIlraith1995,Lee2013,Franzen2003,Silla2013}, which consists in fitting a model that is able to tell what species unseen birdsong excerpts belong to.
 \par More generally, problems such as bird species classification and birdsong syllable segmentation have also motivated the search for optimal feature representations of birdsong. Crucially, much research has pointed out the similarities between human speech and birdsong \cite{Snowdon2013,McIlraith1995}, which has enabled scientists to use methods from the speech recognition domain to analyse birdsong.
 \par Some of the techniques frequently used in the literature to extract features from birdsong are: Mel-Frequency Cepstral Coefficients \cite{Silla2013,Wielgat2012,Stowell2014,Lopes2011}, raw Mel spectra \cite{Stowell2014} and wavelets \cite{Chou2009}. Other techniques used in the domain of Automated Speech Recognition include formant trajectory extraction \cite{Prica2010,Welling1998}.
@@ -93,9 +97,8 @@ Birdsong analysis has long been of interest in the research community because it
 
 \section{Model architecture}
 \label{section_model}
-In this section, we describe a procedure to build phylo-acoustic trees given a dataset $\mathcal{D}$ with birdsong recordings of different bird species from a set $X$. We are interested in finding a relation $R$ over pairs of elements in $X$, along with a scalar $s_{i, j} \in \mathbb{R}$ called the \emph{similarity} between species $s_i, s_j \in S$, i.e. $R \subseteq S \times S \times \mathbb{R}$. This relation can then be expressed as a symmetric matrix $A = (d_{i,j})$ and be used as input to build a hierarchical structure by means of Agglomerative Hierarchical Clustering (AHC). 
-\par Due to the continuous nature of birdsong, recordings in $\mathcal{D}$ are rarely of the same length, and hence we would like to build a similarity matrix in a \emph{length-invariant} fashion. We achieve this by characterising each bird species $s_k \in S$ as a Variational Hidden Markov Model, and then by defining a similarity metric between them. In the rest of this section, we aim to describe how to train such models, and then explain how they can be used in conjunction with AHC to build phylo-acoustic trees.
-\par In our work, we associate each bird species to a statistical model on the frequency components of their birdsong. In order to extract frequency features from birdsong, we use the Linear Predictive Coding (LPC) framework to compute the \emph{formant trajectories} of each birdsong recording. The LPC framework is based on the source-filter model of speech, which models acoustic signals shaped by the vocal tract, such as vowel sounds shaped by the larynx in the case of humans, and as birdsong, which is shaped by the syrinx.
+In this section, we describe a procedure to build hierarchical relational structures given a dataset $\mathcal{D}$ with time series produced by different sources from a set $X$. We are interested in finding a relation $R$ over pairs of elements in $X$, along with a scalar $d_{i, j} \in \mathbb{R}$ called the \emph{similarity} between species $s_i, s_j \in S$, i.e. $R \subseteq S \times S \times \mathbb{R}$. This relation can then be expressed as a symmetric matrix $A = (d_{i,j})$ and be used as input to build a hierarchical structure by means of Agglomerative Hierarchical Clustering (AHC). 
+\par We aim to characterise each source $s_i$ in a length-invariant fashion, and we do so by training a Variational Hidden Markov Model over its corresponding time series $\V{f} \in \mathcal{D}$. These HMMs are then compared via a similarity metric and the resulting distance matrix is used as input for AHC to produce the final structure. In this section, we will introduce formant trajectory extraction, which results from an application of the Linear Predictive Coding framework. This will be relevant in our experimental setting. We will also introduce the Variational Bayes HMM framework, and a novel metric to measure their similarity.
 
 \subsection{Feature extraction}
 Many techniques exist in the literature to extract features from acoustic signals, most of which have been motivated by research in the field of human speech recognition. These include Mel-frequency Cepstral Coefficients \cite{Jurafsky2009, Chou2008a, Stowell2014, Gutierrez-Osuna2009}, which have also been used in combination with spherical K-means \cite{Stowell2014}, the MUSIC algorithm \cite{Evans, Kootsookos1999} and wavelets \cite{Gamulkiewicz2003, Chou2009}.
@@ -133,8 +136,8 @@ B = -\frac{f_s}{2\pi}\log{r}
 \label{fig_specformants}
 \end{figure}
 
-\subsection{Characterising bird species as statistical models}
-Once each birdsong recording has been transformed into a formant trajectory, we can train models that characterise each bird species as a model. Recall that this step endows our approach with the length-invariance property, which is crucial in order to capture similarities across recordings of different durations. In particular, we present Variational Bayes Hidden Markov Models (VB-HMM), which are able to learn time-ordered data. 
+\subsection{Variational Bayes Hidden Markov Models} \label{sub_hmms}
+Once each time series has been transformed into a feature representation, we can train models that characterise each their sources. Recall that this step endows our approach with the length-invariance property, which is crucial in order to capture similarities across different sources. We now present the Variational Bayes Hidden Markov Models (VB-HMM), which are the key component in this architecture.
 
 %\subsubsection{Kernel Density Estimation}
 %\label{sub_kde}
@@ -158,8 +161,7 @@ Once each birdsong recording has been transformed into a formant trajectory, we 
 %\end{equation}
 %with $\sum_i=1^K\pi_i, 0 \leq \pi_i\leq 1$. Nevertheless, even if GMMs are more scalable than KDE, neither method allows for the existence of time ordering of data. That is, both models treat the formant trajectories as sets, rather than sequential structures. This motivates the need for an even more abstract structure that takes into consideration the sequential structure of formant trajectories.
 
-\subsubsection{Variational Bayes Hidden Markov Models} \label{sub_hmms}
-We propose summarising the extracted feature time series as Variational Hidden Markov Models. On one hand, this approach is more powerful than fitting plain probability distributions, since HMMs are not only endowed with an emission model $\phi$ which serves to the same purpose, but they are also capable of capturing time-ordering via a Markov Chain transition model $B$. By describing the values $x_t$ and then describing their temporal dynamics, we can fully describe a sequence $\V{x}$. On the other hand, a Variational HMM also allows for a natural shrinking of the number of states, which results in a more accurate selection of this configuration parameter.
+We propose summarising the time series of extracted features as Variational Hidden Markov Models. On one hand, this approach is more powerful than fitting plain probability distributions, since HMMs are not only endowed with an emission model $\phi$ which serves to the same purpose, but they are also capable of capturing time-ordering via a Markov Chain transition model $B$. By describing the values $x_t$ and then describing their temporal dynamics, we can fully describe a sequence $\V{x}$. On the other hand, a Variational HMM also allows for a natural shrinking of the number of states, which results in a more accurate selection of this configuration parameter.
 \par In this scenario, we aim to infer the probability that the model generated the time series $\V{x}$ and that the underlying Markov Process generated the sequence of states $\V{s}$. This is given by the joint probability distribution $p(\V{x}, \V{s})$:
 \begin{equation}\label{eq:hmm}
 p(\V{x}, \V{s}) = p(\V{s})p(\V{x} \given \V{s}) = p(s_1)\prod_{t=1}^{T-1}p(s_{t+1}\given s_t)\prod_{t=1}^Tp(\V{x}_t \given s_t)
@@ -271,22 +273,20 @@ We implemented a system capable of building phylo-acoustic trees automatically. 
 \par We used the following pre-processing before extracting formant trajectories: a pre-emphasis filtering with $\alpha = 0.95$; segmentation into frames of 40 ms with an overlap of 50\% \cite{Stowell2014}; finally, each frame is convolved with a Hamming window to avoid sharp edges. 
 \par The number of formants we estimate per window corresponds to the rule of thumb $N_f = f_s / 2000$, where $f_s$ is the sampling frequency of the recording \cite{markel1976}. Since birdsong goes to frequencies as high as 10,000 Hz \cite{Marler2004}, and that we want to have 1 formant per thousand Hz, all the birdsong files must be sampled at least at 20,000 Hz, we chose a conventional 22,500 Hz sampling frequency. Furthermore, the order of the LPC model corresponds to $p = 2N_f + 2$ to account for complex conjugate roots \cite{Benesty}. 
 \par Once the formants for a given window have been calculated, all values $f_{i, j} < 500$ Hz are filtered as noise \cite{Stowell2014}, and only the formants with a bandwidth narrower than 500 Hz are kept. 
-\par As for Kernel Density Estimation, the function \texttt{ksdensity} is included in the MATLAB Statistics and Machine Learning Toolbox. After estimating the probability distribution of each recording, all the distributions corresponding to the same species are averaged to obtain a single, characterising distribution per species. Figure \ref{fig_kdespecies} shows the result of this procedure for 5 different bird species in the ASA dataset.
+%\par As for Kernel Density Estimation, the function \texttt{ksdensity} is included in the MATLAB Statistics and Machine Learning Toolbox. After estimating the probability distribution of each recording, all the distributions corresponding to the same species are averaged to obtain a single, characterising distribution per species. 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{images/gmm_plots}
 \caption{Comparison of HMM observation models for 5 different species. Despite having high probability in similar ranges of frequencies, their shapes are still distinguishable. }
 \label{fig_kdespecies}
 \end{figure}
-\par Concerning VB-HMMs, we used the implementation of the Oxford Machine Learning Research Group, HMMBOX 4.1, which requires the NETLAB package. The former contains implementations of the tools required for a Bayesian treatment of HMMs, in particular: implementation of closed forms for the KL-divergence of the Normal, Dirichlet and Wishart distributions, variational inference training and sequence decoding. Furthermore, a routine that computes the occupancy of an HMM $\Omega_\lambda$ with respect to a sequence $\V{x}$ was also implemented. After computing the formant trajectories for each recording, the ones corresponding to a single species were concatenated and used as the training sequence for each HMM, i.e. we trained one HMM per species, and then computed their occupancy with respect to their respective training sequences. We used a Gaussian observation model for every HMM.
+\par Concerning VB-HMMs, we used the implementation of the Oxford Machine Learning Research Group, HMMBOX 4.1, which requires the NETLAB package. The former contains implementations of the tools required for a Bayesian treatment of HMMs, in particular: implementation of closed forms for the KL-divergence of the Normal, Dirichlet and Wishart distributions, variational inference training and sequence decoding. Figure \ref{fig_kdespecies} shows the resulting observation models of this procedure for 5 different bird species in the ASA dataset. %Furthermore, a routine that computes the occupancy of an HMM $\Omega_\lambda$ with respect to a sequence $\V{x}$ was also implemented. After computing the formant trajectories for each recording, the ones corresponding to a single species were concatenated and used as the training sequence for each HMM, i.e. we trained one HMM per species, and then computed their occupancy with respect to their respective training sequences. We used a Gaussian observation model for every HMM.
 \par All the similarity metrics described in section \ref{section_model} were implemented as MATLAB scripts as well. Finally, the MATLAB Statistics and Machine Learning Toolbox contains functions to perform linkage and dendrogram plotting from a similarity matrix.
 
 \subsection{Results}
 \label{sub_results}
 In this subsection, we present phylo-acoustic trees obtained from using the techniques described in section \ref{section_model}. We used 6 different approaches to build phylo-acoustic trees:
 \begin{itemize}
-\item Symmetric KL Divergence over non-parametric distributions generated via KDE.
-\item Hellinger distance over non-parametric distributions generated via KDE.
 \item Symmetric KL Divergence over Gaussian Mixture Models trained as emission models for a Hidden Markov Model.
 \item Hellinger distance over Gaussian Mixture Models trained as emission models for a Hidden Markov Model.
 \item Symmetric KL Divergence over the Dirichlet distributions associated to the transition models of our Hidden Markov Models.
@@ -304,8 +304,6 @@ H_0 = \text{there is no relationship between the species in a phylo-acoustic tre
 \begin{tabular}{r|r|r}
      \textbf{method} &\textbf{divergence}\\
      \hline
-     \textbf{SKLD over pdfs via KDE} & 6704\\
-     Hellinger over pdfs via KDE & 1188\\
      \textbf{SKLD over GMMs from VB-HMM} & 2574\\
      Hellinger over GMMs from VB-HMM & 406\\
      SKLD over Dirichlets from VB-HMM & 356\\
